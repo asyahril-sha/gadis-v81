@@ -1,0 +1,85 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+
+# Database
+*.db
+*.db-journal
+*.sqlite3
+*.sqlite
+*.postgres
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+logs/
+*.log
+*.log.*
+gadis.log
+
+# Memory storage
+memory_storage/
+vector_db/
+
+# Backups
+backups/
+*.backup
+*.dump
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Deployment
+*.pid
+*.sock
+*.pid.lock
+
+# Docker
+.dockerignore
+Dockerfile*
+docker-compose*.yml
+
+# Kubernetes
+*.kubeconfig
+*.secret.yaml
+
+# Certificates
+*.pem
+*.key
+*.crt
+
+# Railway
+.railway/
+
+# Telegram bot
+bot.session
