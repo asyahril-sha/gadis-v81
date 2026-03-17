@@ -4,7 +4,7 @@
 =============================================================================
 GADIS V81 - MAIN ENTRY POINT
 =============================================================================
-Native python-telegram-bot dengan polling mode
+Native python-telegram-bot v20+ dengan polling mode
 """
 
 import asyncio
@@ -52,13 +52,12 @@ async def init_components():
     app = await create_application()
     logger.info("✅ Bot application created")
     
-    # Setup webhook (polling mode)
+    # Setup webhook (polling mode) - HAPUS semua kode yang pakai Updater
     from bot.webhook import setup_webhook
     mode = await setup_webhook(app)
     logger.info(f"✅ Webhook URL: {mode}")
     
     logger.info("🚀 GADIS V81 is ready!")
-    logger.info("📡 Starting bot in polling mode...")
     
     return app
 
@@ -69,7 +68,9 @@ def main():
         # Initialize components asynchronously
         app = asyncio.run(init_components())
         
-        # Run polling - this is blocking and manages its own loop
+        logger.info("📡 Starting bot in polling mode...")
+        
+        # Run polling - blocking synchronous call (PTB v20+ style)
         app.run_polling(
             allowed_updates=['message', 'callback_query'],
             drop_pending_updates=True
@@ -79,6 +80,8 @@ def main():
         logger.info("👋 Bot stopped by user")
     except Exception as e:
         logger.error(f"❌ Fatal error: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
     finally:
         logger.info("👋 Goodbye!")
