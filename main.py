@@ -114,14 +114,7 @@ class Application:
     
         # Hanya close database, tidak usah close yang lain
         await close_db()
-    
-        # Komentari dulu yang error:
-        # from cache.redis_client import close_redis
-        # await close_redis()
-        # from queue.rabbitmq import close_rabbitmq
-        # await close_rabbitmq()
 
-        
         # Cancel background tasks
         for task in self.background_tasks:
             task.cancel()
