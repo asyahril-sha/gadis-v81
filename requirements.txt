@@ -6,7 +6,7 @@ python-dotenv==1.0.1
 # ===== WEBHOOK & API =====
 Flask==3.0.2
 requests==2.31.0
-httpx==0.27.0
+httpx==0.25.2
 fastapi==0.110.0
 uvicorn==0.29.0
 
