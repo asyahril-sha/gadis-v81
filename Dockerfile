@@ -17,8 +17,8 @@ RUN apt-get update && apt-get install -y \
 # Copy requirements
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.txt
+# Install dependencies langsung (tanpa wheels)
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Final
 FROM python:3.11-slim
@@ -30,12 +30,9 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy wheels from builder
-COPY --from=builder /app/wheels /wheels
-COPY --from=builder /app/requirements.txt .
-
-# Install dependencies from wheels
-RUN pip install --no-cache /wheels/*
+# Copy installed packages from builder
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code
 COPY . .
