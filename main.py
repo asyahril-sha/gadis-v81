@@ -176,18 +176,28 @@ class Application:
                 # Gunakan polling jika tidak ada webhook URL
                 if not settings.webhook.url:
                     logger.info("📡 Starting bot in polling mode...")
-                    await self.bot_app.run_polling(
+                    
+                    # Gunakan run_polling dengan parameter yang tepat
+                    await self.bot_app.initialize()
+                    await self.bot_app.start()
+                    
+                    # Start polling
+                    await self.bot_app.updater.start_polling(
                         allowed_updates=['message', 'callback_query'],
                         drop_pending_updates=True,
-                        close_loop=False  # Jangan close loop setelah polling
+                        error_callback=self._handle_polling_error
                     )
+                    
+                    # Keep running until stopped
+                    while self.is_running:
+                        await asyncio.sleep(1)
+                        
                 else:
                     await self.bot_app.run_webhook(
                         listen="0.0.0.0",
                         port=settings.webhook.port,
                         url_path=settings.webhook.path,
-                        webhook_url=settings.webhook.url,
-                        close_loop=False  # Jangan close loop setelah webhook
+                        webhook_url=settings.webhook.url
                     )
         except KeyboardInterrupt:
             logger.info("👋 Bot stopped by user")
@@ -197,9 +207,13 @@ class Application:
             from utils.exceptions import exception_handler
             await exception_handler.handle(e, {"phase": "runtime"})
         finally:
-            # Shutdown hanya jika masih running
+            # Shutdown only if still running
             if self.is_running:
                 await self.shutdown()
+    
+    def _handle_polling_error(self, error):
+        """Handle polling errors"""
+        logger.error(f"Polling error: {error}")
 
 
 # ===== SIGNAL HANDLERS =====
@@ -208,20 +222,8 @@ def handle_signal(sig, frame):
     """Handle shutdown signals"""
     logger.info(f"Received signal {sig}, shutting down...")
     
-    # Dapatkan event loop yang sedang running
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        # Tidak ada loop yang running
-        sys.exit(0)
-    
-    # Schedule shutdown
-    if loop.is_running():
-        loop.create_task(app.shutdown())
-        # Beri waktu untuk shutdown
-        loop.call_later(5, lambda: sys.exit(0))
-    else:
-        sys.exit(0)
+    # Set flag to stop
+    app.is_running = False
 
 
 # ===== MAIN =====
@@ -233,17 +235,11 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, handle_signal)
     signal.signal(signal.SIGTERM, handle_signal)
     
-    # Cek apakah sudah ada event loop
+    # Simple run with asyncio
     try:
-        asyncio.get_running_loop()
-        # Sudah ada loop, gunakan create_task
-        asyncio.create_task(app.run())
-    except RuntimeError:
-        # Tidak ada loop, buat baru dengan asyncio.run
-        try:
-            asyncio.run(app.run())
-        except KeyboardInterrupt:
-            logger.info("👋 Bot stopped by user")
-        except Exception as e:
-            logger.error(f"Fatal error: {e}")
-            sys.exit(1)
+        asyncio.run(app.run())
+    except KeyboardInterrupt:
+        logger.info("👋 Bot stopped by user")
+    except Exception as e:
+        logger.error(f"Fatal error: {e}")
+        sys.exit(1)
