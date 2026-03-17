@@ -2,14 +2,13 @@
 # -*- coding: utf-8 -*-
 """
 =============================================================================
-SQLITE CONNECTION (SEDERHANA)
+SQLITE CONNECTION (FINAL)
 =============================================================================
 Koneksi database SQLite untuk single user
 """
 
 import sqlite3
 import aiosqlite
-import asyncio
 from pathlib import Path
 from typing import Optional, Dict, List, Any
 from contextlib import asynccontextmanager
@@ -22,9 +21,10 @@ class DatabaseManager:
     """Manajemen koneksi SQLite sederhana"""
     
     def __init__(self):
-        self.db_path = Path(settings.db_path)
+        # Perbaikan: settings.db_path → settings.db.path
+        self.db_path = Path(settings.db.path)
         self.connection = None
-        self._lock = asyncio.Lock()
+        self._lock = None
         self._stats = {
             "queries": 0,
             "errors": 0
@@ -32,6 +32,9 @@ class DatabaseManager:
     
     async def initialize(self):
         """Inisialisasi database"""
+        import asyncio
+        self._lock = asyncio.Lock()
+        
         async with self._lock:
             try:
                 # Buat koneksi
