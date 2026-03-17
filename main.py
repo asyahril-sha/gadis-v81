@@ -7,7 +7,6 @@ GADIS V81 - MAIN ENTRY POINT
 Native python-telegram-bot v20+ dengan polling mode
 """
 
-import asyncio
 import sys
 import traceback
 from pathlib import Path
@@ -34,11 +33,12 @@ print(f"🎯 Bot Initiative: {'ON' if settings.sexual.bot_initiative_enabled els
 print("="*70)
 
 
-async def init_database():
-    """Initialize database asynchronously"""
+def init_database():
+    """Initialize database synchronously"""
     try:
-        from database.connection import init_db
-        await init_db()
+        # Gunakan sync wrapper
+        from database.connection import init_db_sync
+        init_db_sync()
         logger.info("✅ Database initialized")
     except Exception as e:
         logger.error(f"❌ Database initialization failed: {e}")
@@ -46,34 +46,33 @@ async def init_database():
         raise
 
 
-async def init_redis():
-    """Initialize Redis asynchronously"""
+def init_redis():
+    """Initialize Redis synchronously"""
     try:
-        from cache.redis_client import init_redis
-        await init_redis()
+        from cache.redis_client import init_redis_sync
+        init_redis_sync()
         logger.info("✅ Redis initialized")
     except Exception as e:
         logger.error(f"❌ Redis initialization failed: {e}")
-        # Non-critical, continue
         traceback.print_exc()
 
 
-async def init_components_async():
-    """Initialize all components asynchronously"""
+def init_components():
+    """Initialize all components - SYNCHRONOUS"""
     logger.info("🚀 Starting GADIS V81...")
     
-    # Initialize database (async)
-    await init_database()
+    # Initialize database (synchronous)
+    init_database()
     
-    # Initialize Redis (async)
-    await init_redis()
+    # Initialize Redis (synchronous)
+    init_redis()
     
     # Create bot application (synchronous)
     from bot.application import create_application
     app = create_application()
     logger.info("✅ Bot application created")
     
-    # Setup webhook (sync wrapper untuk async)
+    # Setup webhook (sync wrapper)
     from bot.webhook import setup_webhook_sync
     mode = setup_webhook_sync(app)
     logger.info(f"✅ Webhook URL: {mode}")
@@ -84,10 +83,10 @@ async def init_components_async():
 
 
 def main():
-    """Main function"""
+    """Main function - fully synchronous"""
     try:
-        # Initialize components asynchronously
-        app = asyncio.run(init_components_async())
+        # Initialize all components synchronously
+        app = init_components()
         
         logger.info("📡 Starting bot in polling mode...")
         
