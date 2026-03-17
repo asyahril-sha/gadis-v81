@@ -78,7 +78,7 @@ async def create_application() -> Application:
     # ===== CONVERSATION HANDLERS =====
     logger.info("  • Setting up conversation handlers...")
     
-    # Start conversation
+    # Start conversation - tambahkan per_* parameters untuk menghilangkan warning
     start_conv = ConversationHandler(
         entry_points=[CommandHandler('start', start_command)],
         states={
@@ -98,7 +98,10 @@ async def create_application() -> Application:
         },
         fallbacks=[CommandHandler('cancel', cancel_command)],
         name="start_conversation",
-        persistent=False
+        persistent=False,
+        per_user=True,
+        per_chat=True,
+        per_message=False
     )
     
     # End conversation
@@ -109,7 +112,10 @@ async def create_application() -> Application:
         },
         fallbacks=[CommandHandler('cancel', cancel_command)],
         name="end_conversation",
-        persistent=False
+        persistent=False,
+        per_user=True,
+        per_chat=True,
+        per_message=False
     )
     
     # Close conversation
@@ -120,7 +126,10 @@ async def create_application() -> Application:
         },
         fallbacks=[CommandHandler('cancel', cancel_command)],
         name="close_conversation",
-        persistent=False
+        persistent=False,
+        per_user=True,
+        per_chat=True,
+        per_message=False
     )
     
     # Relationship conversations
@@ -141,7 +150,10 @@ async def create_application() -> Application:
         },
         fallbacks=[CommandHandler('cancel', cancel_command)],
         name="relationship_conversation",
-        persistent=False
+        persistent=False,
+        per_user=True,
+        per_chat=True,
+        per_message=False
     )
     
     # ===== ADD ALL HANDLERS =====
