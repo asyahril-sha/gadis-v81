@@ -21,7 +21,6 @@ click==8.1.7
 
 # ===== OPSIONAL (HAPUS YANG BERAT) =====
 # asyncpg==0.29.0
-# sqlalchemy==2.0.28
 # alembic==1.13.1
 # redis==5.0.3
 # aio-pika==9.3.0
