@@ -65,7 +65,7 @@ class Application:
         # Setup webhook
         from bot.webhook import setup_webhook
         webhook_url = await setup_webhook(self.bot_app)
-        logger.info(f"✅ Webhook URL: {webhook_url}")
+        logger.info(f"✅ Webhook URL: {webhook_url or 'polling'}")
         
         # Start WebSocket server (optional)
         if hasattr(settings, 'ws_host') and settings.ws_host:
@@ -134,6 +134,7 @@ class Application:
         # Stop bot application
         if self.bot_app:
             try:
+                # Stop the bot properly
                 await self.bot_app.stop()
                 await self.bot_app.shutdown()
             except Exception as e:
@@ -172,22 +173,33 @@ class Application:
             
             # Run webhook (blocking)
             if self.bot_app:
-                await self.bot_app.run_webhook(
-                    listen="0.0.0.0",
-                    port=settings.webhook.port,
-                    url_path=settings.webhook.path,
-                    webhook_url=settings.webhook.url
-                )
+                # Gunakan polling jika tidak ada webhook URL
+                if not settings.webhook.url:
+                    logger.info("📡 Starting bot in polling mode...")
+                    await self.bot_app.run_polling(
+                        allowed_updates=['message', 'callback_query'],
+                        drop_pending_updates=True,
+                        close_loop=False  # Jangan close loop setelah polling
+                    )
+                else:
+                    await self.bot_app.run_webhook(
+                        listen="0.0.0.0",
+                        port=settings.webhook.port,
+                        url_path=settings.webhook.path,
+                        webhook_url=settings.webhook.url,
+                        close_loop=False  # Jangan close loop setelah webhook
+                    )
         except KeyboardInterrupt:
             logger.info("👋 Bot stopped by user")
-            await self.shutdown()
         except Exception as e:
             logger.error(f"❌ Fatal error: {e}")
-            # Import exception handler - gunakan exception_handler (instance)
+            # Import exception handler
             from utils.exceptions import exception_handler
             await exception_handler.handle(e, {"phase": "runtime"})
-            await self.shutdown()
-            sys.exit(1)
+        finally:
+            # Shutdown hanya jika masih running
+            if self.is_running:
+                await self.shutdown()
 
 
 # ===== SIGNAL HANDLERS =====
@@ -195,12 +207,21 @@ class Application:
 def handle_signal(sig, frame):
     """Handle shutdown signals"""
     logger.info(f"Received signal {sig}, shutting down...")
-    # Buat task untuk shutdown
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(app.shutdown())
-    loop.close()
-    sys.exit(0)
+    
+    # Dapatkan event loop yang sedang running
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        # Tidak ada loop yang running
+        sys.exit(0)
+    
+    # Schedule shutdown
+    if loop.is_running():
+        loop.create_task(app.shutdown())
+        # Beri waktu untuk shutdown
+        loop.call_later(5, lambda: sys.exit(0))
+    else:
+        sys.exit(0)
 
 
 # ===== MAIN =====
@@ -212,11 +233,17 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, handle_signal)
     signal.signal(signal.SIGTERM, handle_signal)
     
-    # Run application
+    # Cek apakah sudah ada event loop
     try:
-        asyncio.run(app.run())
-    except KeyboardInterrupt:
-        logger.info("👋 Bot stopped by user")
-    except Exception as e:
-        logger.error(f"Fatal error: {e}")
-        sys.exit(1)
+        asyncio.get_running_loop()
+        # Sudah ada loop, gunakan create_task
+        asyncio.create_task(app.run())
+    except RuntimeError:
+        # Tidak ada loop, buat baru dengan asyncio.run
+        try:
+            asyncio.run(app.run())
+        except KeyboardInterrupt:
+            logger.info("👋 Bot stopped by user")
+        except Exception as e:
+            logger.error(f"Fatal error: {e}")
+            sys.exit(1)
