@@ -29,6 +29,7 @@ async def setup_webhook(app: Application) -> str:
         webhook_url = f"https://{railway_url}{settings.webhook.path}"
     else:
         logger.warning("⚠️ No webhook URL found, using polling mode")
+        # Hanya delete webhook, tidak pakai updater
         await app.bot.delete_webhook()
         return "polling"
     
@@ -58,12 +59,3 @@ async def setup_webhook(app: Application) -> str:
         logger.warning("⚠️ Falling back to polling mode")
         await app.bot.delete_webhook()
         return "polling"
-
-
-async def delete_webhook(app: Application):
-    """Delete webhook"""
-    try:
-        await app.bot.delete_webhook(drop_pending_updates=True)
-        logger.info("✅ Webhook deleted")
-    except Exception as e:
-        logger.error(f"❌ Error deleting webhook: {e}")
