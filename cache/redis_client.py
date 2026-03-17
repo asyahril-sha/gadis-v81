@@ -2,71 +2,64 @@
 # -*- coding: utf-8 -*-
 """
 =============================================================================
-REDIS CLIENT SEDERHANA
+REDIS CLIENT
 =============================================================================
-Redis client sederhana (mock) - tidak perlu Redis sungguhan
 """
 
-from typing import Optional, Any, Dict
+import asyncio
+from typing import Optional, Any
 from utils.logger import logger
 
 
-class RedisClient:
-    """Redis client sederhana (mock)"""
-    
+# Mock Redis untuk development
+class MockRedis:
     def __init__(self):
-        self._connected = False
-        self._cache = {}
+        self._data = {}
     
-    async def initialize(self):
-        """Initialize Redis (mock)"""
-        self._connected = True
-        logger.info("✅ Redis mock initialized (no actual Redis)")
+    async def get(self, key):
+        return self._data.get(key)
     
-    async def close(self):
-        """Close Redis connection"""
-        self._connected = False
-        self._cache.clear()
-        logger.info("✅ Redis mock closed")
-    
-    async def get(self, key: str, default: Any = None) -> Any:
-        """Get value from cache"""
-        return self._cache.get(key, default)
-    
-    async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
-        """Set value in cache"""
-        self._cache[key] = value
+    async def set(self, key, value, ex=None):
+        self._data[key] = value
         return True
     
-    async def delete(self, key: str) -> bool:
-        """Delete key from cache"""
-        if key in self._cache:
-            del self._cache[key]
-            return True
-        return False
+    async def delete(self, key):
+        if key in self._data:
+            del self._data[key]
+            return 1
+        return 0
     
-    async def exists(self, key: str) -> bool:
-        """Check if key exists"""
-        return key in self._cache
-    
-    def is_connected(self) -> bool:
-        """Check if connected"""
-        return self._connected
+    async def close(self):
+        self._data.clear()
 
 
-# ===== FUNGSI YANG DIBUTUHKAN =====
+_redis_client: Optional[MockRedis] = None
+
+
 async def init_redis():
-    """Initialize Redis (dipanggil di main.py)"""
-    await redis_client.initialize()
+    """Initialize Redis asynchronously"""
+    global _redis_client
+    _redis_client = MockRedis()
+    logger.info("✅ Redis mock initialized (async)")
+    return _redis_client
+
+
+async def get_redis():
+    """Get Redis client asynchronously"""
+    return _redis_client
 
 
 async def close_redis():
-    """Close Redis connection"""
-    await redis_client.close()
+    """Close Redis asynchronously"""
+    global _redis_client
+    if _redis_client:
+        await _redis_client.close()
+        _redis_client = None
+        logger.info("✅ Redis mock closed (async)")
 
 
-# ===== GLOBAL INSTANCE =====
-redis_client = RedisClient()
-
-
-__all__ = ['redis_client', 'init_redis', 'close_redis']
+__all__ = [
+    'init_redis',
+    'get_redis',
+    'close_redis'
+]
