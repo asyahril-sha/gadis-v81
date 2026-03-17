@@ -18,6 +18,7 @@ loguru==0.7.2
 python-dateutil==2.9.0
 typing-extensions==4.10.0
 click==8.1.7
+loguru>=0.7.2
 
 # ===== OPSIONAL (HAPUS YANG BERAT) =====
 # asyncpg==0.29.0
