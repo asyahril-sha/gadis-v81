@@ -11,7 +11,55 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Dict, List, Any
 
-
+class Constants:
+    """Constants for relationship models"""
+    
+    # Relationship stages
+    STAGE_STRANGER = "stranger"
+    STAGE_FRIEND = "friend"
+    STAGE_CLOSE_FRIEND = "close_friend"
+    STAGE_LOVER = "lover"
+    STAGE_PARTNER = "partner"
+    STAGE_MARRIED = "married"
+    
+    # Relationship statuses
+    STATUS_PDKT = "pdkt"
+    STATUS_SINGLE = "single"
+    STATUS_COMPLICATED = "complicated"
+    STATUS_EXCLUSIVE = "exclusive"
+    
+    # Dominance types
+    DOM_NORMAL = "normal"
+    DOM_DOMINANT = "dominant"
+    DOM_SUBMISSIVE = "submissive"
+    DOM_SWITCH = "switch"
+    
+    # Relationship types for HTS/FWB
+    TYPE_HTS = "hts"  # Hubungan Tanpa Status
+    TYPE_FWB = "fwb"  # Friends With Benefits
+    TYPE_ONS = "ons"  # One Night Stand
+    
+    # Roles
+    ROLE_USER = "user"
+    ROLE_BOT = "bot"
+    
+    # Moods
+    MOOD_HAPPY = "happy"
+    MOOD_SAD = "sad"
+    MOOD_ANGRY = "angry"
+    MOOD_EXCITED = "excited"
+    MOOD_AROUSED = "aroused"
+    MOOD_TIRED = "tired"
+    MOOD_ROMANTIC = "romantic"
+    MOOD_PLAYFUL = "playful"
+    MOOD_BORED = "bored"
+    
+    # Default values
+    DEFAULT_LEVEL = 1
+    DEFAULT_AROUSAL = 0.0
+    DEFAULT_CLIMAX = 0
+    DEFAULT_ANGER = 0
+    
 @dataclass
 class Relationship:
     """Model relationship tanpa SQLAlchemy"""
