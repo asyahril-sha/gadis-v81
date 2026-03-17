@@ -78,7 +78,7 @@ async def create_application() -> Application:
     # ===== CONVERSATION HANDLERS =====
     logger.info("  • Setting up conversation handlers...")
     
-    # Start conversation
+    # Start conversation - per_message=True untuk callback query
     start_conv = ConversationHandler(
         entry_points=[CommandHandler('start', start_command)],
         states={
@@ -101,7 +101,7 @@ async def create_application() -> Application:
         persistent=False,
         per_user=True,
         per_chat=True,
-        per_message=False
+        per_message=True  # Ubah ke True untuk callback query
     )
     
     # End conversation
@@ -115,7 +115,7 @@ async def create_application() -> Application:
         persistent=False,
         per_user=True,
         per_chat=True,
-        per_message=False
+        per_message=True  # Ubah ke True untuk callback query
     )
     
     # Close conversation
@@ -129,7 +129,7 @@ async def create_application() -> Application:
         persistent=False,
         per_user=True,
         per_chat=True,
-        per_message=False
+        per_message=True  # Ubah ke True untuk callback query
     )
     
     # Relationship conversations
@@ -153,7 +153,7 @@ async def create_application() -> Application:
         persistent=False,
         per_user=True,
         per_chat=True,
-        per_message=False
+        per_message=True  # Ubah ke True untuk callback query
     )
     
     # ===== ADD ALL HANDLERS =====
