@@ -9,6 +9,7 @@ Native python-telegram-bot v20+ dengan polling mode
 
 import asyncio
 import sys
+import traceback
 from pathlib import Path
 
 # Tambahkan path ke sys.path
@@ -37,29 +38,35 @@ async def init_components():
     """Initialize all components asynchronously"""
     logger.info("🚀 Starting GADIS V81...")
     
-    # Initialize database
-    from database.connection import init_db
-    await init_db()
-    logger.info("✅ Database initialized")
-    
-    # Initialize Redis (mock)
-    from cache.redis_client import init_redis
-    await init_redis()
-    logger.info("✅ Redis initialized")
-    
-    # Create bot application
-    from bot.application import create_application
-    app = await create_application()
-    logger.info("✅ Bot application created")
-    
-    # Setup webhook (polling mode) - HAPUS semua kode yang pakai Updater
-    from bot.webhook import setup_webhook
-    mode = await setup_webhook(app)
-    logger.info(f"✅ Webhook URL: {mode}")
-    
-    logger.info("🚀 GADIS V81 is ready!")
-    
-    return app
+    try:
+        # Initialize database
+        from database.connection import init_db
+        await init_db()
+        logger.info("✅ Database initialized")
+        
+        # Initialize Redis (mock)
+        from cache.redis_client import init_redis
+        await init_redis()
+        logger.info("✅ Redis initialized")
+        
+        # Create bot application
+        from bot.application import create_application
+        app = await create_application()
+        logger.info("✅ Bot application created")
+        
+        # Setup webhook (polling mode)
+        from bot.webhook import setup_webhook
+        mode = await setup_webhook(app)
+        logger.info(f"✅ Webhook URL: {mode}")
+        
+        logger.info("🚀 GADIS V81 is ready!")
+        
+        return app
+        
+    except Exception as e:
+        logger.error(f"❌ Error during initialization: {e}")
+        traceback.print_exc()
+        raise
 
 
 def main():
@@ -80,7 +87,6 @@ def main():
         logger.info("👋 Bot stopped by user")
     except Exception as e:
         logger.error(f"❌ Fatal error: {e}")
-        import traceback
         traceback.print_exc()
         sys.exit(1)
     finally:
