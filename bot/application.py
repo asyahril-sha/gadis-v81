@@ -29,26 +29,15 @@ from bot.commands import *
 class BotStates:
     """States for conversation handlers"""
     SELECTING_ROLE = 1
-    SELECTING_BOT_NAME = 2
-    SELECTING_BOT_ROLE = 3
-    SELECTING_DOMINANCE = 4
-    SELECTING_PERSONALITY = 5
-    SELECTING_APPEARANCE = 6
-    CONFIRMATION = 7
-    CHATTING = 8
-    SELECTING_ACTION = 9
-    SELECTING_LOCATION = 10
-    SELECTING_CLOTHING = 11
-    SELECTING_ACTIVITY = 12
-    AWAITING_RESPONSE = 13
     CONFIRM_END = 14
     CONFIRM_CLOSE = 15
     CONFIRM_BROADCAST = 16
 
 
-async def create_application() -> Application:
+def create_application() -> Application:
     """
     Create and configure telegram application
+    INI SYNCHRONOUS, BUKAN ASYNC!
     """
     
     logger.info("🔧 Creating PTB application...")
@@ -62,7 +51,7 @@ async def create_application() -> Application:
         pool_timeout=60,
     )
     
-    # Build application
+    # Build application - SYNCHRONOUS
     app = ApplicationBuilder() \
         .token(settings.telegram_token) \
         .request(request) \
@@ -75,16 +64,17 @@ async def create_application() -> Application:
     CONFIRM_CLOSE = getattr(Constants, 'CONFIRM_CLOSE', BotStates.CONFIRM_CLOSE)
     CONFIRM_BROADCAST = getattr(Constants, 'CONFIRM_BROADCAST', BotStates.CONFIRM_BROADCAST)
     
+    logger.info(f"  • Using SELECTING_ROLE = {SELECTING_ROLE}")
+    
     # ===== CONVERSATION HANDLERS =====
     logger.info("  • Setting up conversation handlers...")
     
-    # Start conversation - per_message=True untuk callback query
+    # Start conversation
     start_conv = ConversationHandler(
         entry_points=[CommandHandler('start', start_command)],
         states={
             SELECTING_ROLE: [
                 CallbackQueryHandler(agree_18_callback, pattern='^agree_18$'),
-                CallbackQueryHandler(start_pause_callback, pattern='^(unpause|new)$'),
                 CallbackQueryHandler(role_ipar_callback, pattern='^role_ipar$'),
                 CallbackQueryHandler(role_teman_kantor_callback, pattern='^role_teman_kantor$'),
                 CallbackQueryHandler(role_janda_callback, pattern='^role_janda$'),
@@ -101,7 +91,7 @@ async def create_application() -> Application:
         persistent=False,
         per_user=True,
         per_chat=True,
-        per_message=True  # Ubah ke True untuk callback query
+        per_message=False
     )
     
     # End conversation
@@ -115,7 +105,7 @@ async def create_application() -> Application:
         persistent=False,
         per_user=True,
         per_chat=True,
-        per_message=True  # Ubah ke True untuk callback query
+        per_message=False
     )
     
     # Close conversation
@@ -129,7 +119,7 @@ async def create_application() -> Application:
         persistent=False,
         per_user=True,
         per_chat=True,
-        per_message=True  # Ubah ke True untuk callback query
+        per_message=False
     )
     
     # Relationship conversations
@@ -153,7 +143,7 @@ async def create_application() -> Application:
         persistent=False,
         per_user=True,
         per_chat=True,
-        per_message=True  # Ubah ke True untuk callback query
+        per_message=False
     )
     
     # ===== ADD ALL HANDLERS =====
@@ -166,7 +156,6 @@ async def create_application() -> Application:
     app.add_handler(rel_conv)
     
     # Basic commands
-    app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("status", status_command))
     app.add_handler(CommandHandler("cancel", cancel_command))
