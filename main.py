@@ -180,8 +180,9 @@ class Application:
             await self.shutdown()
         except Exception as e:
             logger.error(f"❌ Fatal error: {e}")
-            from utils.exceptions import global_exception_handler
-            await global_exception_handler.handle(e, {"phase": "runtime"})
+            # Import exception handler - gunakan exception_handler (instance)
+            from utils.exceptions import exception_handler
+            await exception_handler.handle(e, {"phase": "runtime"})
             await self.shutdown()
             sys.exit(1)
 
@@ -191,8 +192,10 @@ class Application:
 def handle_signal(sig, frame):
     """Handle shutdown signals"""
     logger.info(f"Received signal {sig}, shutting down...")
-    asyncio.create_task(app.shutdown())
-    sys.exit(0)
+    loop = asyncio.get_event_loop()
+    loop.create_task(app.shutdown())
+    # Beri waktu untuk shutdown
+    loop.call_later(5, sys.exit, 0)
 
 
 # ===== MAIN =====
@@ -205,4 +208,10 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, handle_signal)
     
     # Run application
-    asyncio.run(app.run())
+    try:
+        asyncio.run(app.run())
+    except KeyboardInterrupt:
+        logger.info("👋 Bot stopped by user")
+    except Exception as e:
+        logger.error(f"Fatal error: {e}")
+        sys.exit(1)
