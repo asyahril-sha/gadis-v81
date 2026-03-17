@@ -34,44 +34,46 @@ print(f"🎯 Bot Initiative: {'ON' if settings.sexual.bot_initiative_enabled els
 print("="*70)
 
 
-def init_database():
-    """Initialize database synchronously"""
+async def init_database():
+    """Initialize database asynchronously"""
     try:
-        from database.connection import init_db_sync
-        init_db_sync()
+        from database.connection import init_db
+        await init_db()
         logger.info("✅ Database initialized")
     except Exception as e:
         logger.error(f"❌ Database initialization failed: {e}")
+        traceback.print_exc()
         raise
 
 
-def init_redis():
-    """Initialize Redis synchronously"""
+async def init_redis():
+    """Initialize Redis asynchronously"""
     try:
-        from cache.redis_client import init_redis_sync
-        init_redis_sync()
+        from cache.redis_client import init_redis
+        await init_redis()
         logger.info("✅ Redis initialized")
     except Exception as e:
         logger.error(f"❌ Redis initialization failed: {e}")
         # Non-critical, continue
+        traceback.print_exc()
 
 
-def init_components():
-    """Initialize all components - SYNCHRONOUS"""
+async def init_components_async():
+    """Initialize all components asynchronously"""
     logger.info("🚀 Starting GADIS V81...")
     
-    # Initialize database (synchronous)
-    init_database()
+    # Initialize database (async)
+    await init_database()
     
-    # Initialize Redis (synchronous)
-    init_redis()
+    # Initialize Redis (async)
+    await init_redis()
     
     # Create bot application (synchronous)
     from bot.application import create_application
-    app = create_application()  # ← ini synchronous!
+    app = create_application()
     logger.info("✅ Bot application created")
     
-    # Setup webhook (synchronous - tapi panggil async function)
+    # Setup webhook (sync wrapper untuk async)
     from bot.webhook import setup_webhook_sync
     mode = setup_webhook_sync(app)
     logger.info(f"✅ Webhook URL: {mode}")
@@ -82,15 +84,14 @@ def init_components():
 
 
 def main():
-    """Main function - fully synchronous"""
+    """Main function"""
     try:
-        # Initialize all components synchronously
-        app = init_components()
+        # Initialize components asynchronously
+        app = asyncio.run(init_components_async())
         
         logger.info("📡 Starting bot in polling mode...")
         
         # Run polling - blocking synchronous call (PTB v20+ style)
-        # Ini akan manage event loop sendiri
         app.run_polling(
             allowed_updates=['message', 'callback_query'],
             drop_pending_updates=True
