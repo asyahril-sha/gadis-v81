@@ -69,9 +69,12 @@ class Application:
         
         # Start WebSocket server (optional)
         if hasattr(settings, 'ws_host') and settings.ws_host:
-            from ws.server import start_websocket_server
-            self.ws_server = await start_websocket_server()
-            logger.info(f"✅ WebSocket server started on {settings.ws_host}:{settings.ws_port}")
+            try:
+                from ws.server import start_websocket_server
+                self.ws_server = await start_websocket_server()
+                logger.info(f"✅ WebSocket server started on {settings.ws_host}:{settings.ws_port}")
+            except (ImportError, AttributeError) as e:
+                logger.debug(f"WebSocket server not available: {e}")
         
         # Start background tasks
         self.background_tasks = await self._start_background_tasks()
@@ -192,10 +195,12 @@ class Application:
 def handle_signal(sig, frame):
     """Handle shutdown signals"""
     logger.info(f"Received signal {sig}, shutting down...")
-    loop = asyncio.get_event_loop()
-    loop.create_task(app.shutdown())
-    # Beri waktu untuk shutdown
-    loop.call_later(5, sys.exit, 0)
+    # Buat task untuk shutdown
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(app.shutdown())
+    loop.close()
+    sys.exit(0)
 
 
 # ===== MAIN =====
