@@ -207,12 +207,12 @@ def handle_errors(func):
     return sync_wrapper
 
 
-# Global instance
+# ===== GLOBAL INSTANCES =====
 exception_handler = GlobalExceptionHandler()
 
 # Untuk backward compatibility dengan kode lama
 global_exception_handler_obj = exception_handler
-global_exception_handler = exception_handler  # Ini penting!
+global_exception_handler = exception_handler  # PENTING: ini membuat function jadi instance
 
 
 __all__ = [
