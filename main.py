@@ -5,11 +5,6 @@
 GADIS V81 - MAIN ENTRY POINT
 =============================================================================
 Native python-telegram-bot webhook dengan semua fitur V81
-- PostgreSQL, Redis, RabbitMQ
-- Multi-model AI
-- Sexual systems lengkap
-- Public areas
-- Bot initiative
 """
 
 import asyncio
@@ -22,7 +17,6 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from config import settings
 from utils.logger import setup_logging
-from utils.exceptions import global_exception_handler
 
 # Setup logging
 logger = setup_logging("gadis_v81")
@@ -34,7 +28,7 @@ print("="*70)
 print(f"📊 Database: {settings.db.name} @ {settings.db.host}")
 print(f"🤖 AI Model: {settings.ai.primary_model}")
 print(f"👑 Admin ID: {settings.admin_id or 'Not set'}")
-print(f"🔞 Sexual Features: ENABLED")
+print(f"🔞 Sexual Features: {'ENABLED' if settings.sexual.enabled else 'DISABLED'}")
 print(f"🌍 Public Areas: {settings.sexual.max_positions} positions")
 print(f"🎯 Bot Initiative: {'ON' if settings.sexual.bot_initiative_enabled else 'OFF'}")
 print("="*70)
@@ -58,7 +52,7 @@ class Application:
         await init_db()
         logger.info("✅ Database initialized")
         
-        # Initialize Redis
+        # Initialize Redis (mock)
         from cache.redis_client import init_redis
         await init_redis()
         logger.info("✅ Redis initialized")
@@ -73,8 +67,8 @@ class Application:
         webhook_url = await setup_webhook(self.bot_app)
         logger.info(f"✅ Webhook URL: {webhook_url}")
         
-        # Start WebSocket server
-        if settings.ws_host:
+        # Start WebSocket server (optional)
+        if hasattr(settings, 'ws_host') and settings.ws_host:
             from ws.server import start_websocket_server
             self.ws_server = await start_websocket_server()
             logger.info(f"✅ WebSocket server started on {settings.ws_host}:{settings.ws_port}")
@@ -89,53 +83,82 @@ class Application:
         """Start all background tasks"""
         tasks = []
         
-        # Memory consolidation task
-        from memory.consolidation import consolidation_loop
-        tasks.append(asyncio.create_task(consolidation_loop()))
+        # Memory consolidation task (if available)
+        try:
+            from memory.consolidation import consolidation_loop
+            tasks.append(asyncio.create_task(consolidation_loop()))
+        except (ImportError, AttributeError):
+            logger.debug("Memory consolidation not available")
         
-        # Backup task
+        # Backup task (if available)
         if settings.backup_enabled:
-            from backup.automated import backup_loop
-            tasks.append(asyncio.create_task(backup_loop()))
+            try:
+                from backup.automated import backup_loop
+                tasks.append(asyncio.create_task(backup_loop()))
+            except (ImportError, AttributeError):
+                logger.debug("Backup system not available")
         
-        # Analytics task
-        from analytics.collector import analytics_loop
-        tasks.append(asyncio.create_task(analytics_loop()))
+        # Analytics task (if available)
+        try:
+            from analytics.collector import analytics_loop
+            tasks.append(asyncio.create_task(analytics_loop()))
+        except (ImportError, AttributeError):
+            logger.debug("Analytics not available")
         
-        # Metrics server
-        if settings.prometheus_port:
-            from monitoring.metrics import start_metrics_server
-            tasks.append(asyncio.create_task(start_metrics_server()))
+        # Metrics server (if available)
+        if hasattr(settings, 'prometheus_port') and settings.prometheus_port:
+            try:
+                from monitoring.metrics import start_metrics_server
+                tasks.append(asyncio.create_task(start_metrics_server()))
+            except (ImportError, AttributeError):
+                logger.debug("Metrics server not available")
         
         return tasks
     
     async def shutdown(self):
+        """Graceful shutdown"""
         logger.info("🛑 Shutting down GADIS V81...")
-    
-        # Hanya close database, tidak usah close yang lain
-        await close_db()
-
+        self.is_running = False
+        
         # Cancel background tasks
         for task in self.background_tasks:
             task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
         
         # Stop bot application
         if self.bot_app:
-            await self.bot_app.stop()
-            await self.bot_app.shutdown()
+            try:
+                await self.bot_app.stop()
+                await self.bot_app.shutdown()
+            except Exception as e:
+                logger.error(f"Error stopping bot: {e}")
         
         # Stop WebSocket server
         if self.ws_server:
-            self.ws_server.close()
-            await self.ws_server.wait_closed()
+            try:
+                self.ws_server.close()
+                await self.ws_server.wait_closed()
+            except Exception as e:
+                logger.error(f"Error stopping WebSocket: {e}")
         
         # Close database connections
-        from database.connection import close_db
-        await close_db()
+        try:
+            from database.connection import close_db
+            await close_db()
+            logger.info("✅ Database connection closed")
+        except Exception as e:
+            logger.error(f"Error closing database: {e}")
         
         # Close Redis
-        from cache.redis_client import close_redis
-        await close_redis()
+        try:
+            from cache.redis_client import close_redis
+            await close_redis()
+            logger.info("✅ Redis connection closed")
+        except Exception as e:
+            logger.error(f"Error closing Redis: {e}")
         
         logger.info("👋 Goodbye!")
     
@@ -153,9 +176,11 @@ class Application:
                     webhook_url=settings.webhook.url
                 )
         except KeyboardInterrupt:
+            logger.info("👋 Bot stopped by user")
             await self.shutdown()
         except Exception as e:
             logger.error(f"❌ Fatal error: {e}")
+            from utils.exceptions import global_exception_handler
             await global_exception_handler.handle(e, {"phase": "runtime"})
             await self.shutdown()
             sys.exit(1)
