@@ -115,9 +115,17 @@ class Application:
         return tasks
     
     async def shutdown(self):
-        """Graceful shutdown"""
         logger.info("🛑 Shutting down GADIS V81...")
-        self.is_running = False
+    
+        # Hanya close database, tidak usah close yang lain
+        await close_db()
+    
+        # Komentari dulu yang error:
+        # from cache.redis_client import close_redis
+        # await close_redis()
+        # from queue.rabbitmq import close_rabbitmq
+        # await close_rabbitmq()
+
         
         # Cancel background tasks
         for task in self.background_tasks:
