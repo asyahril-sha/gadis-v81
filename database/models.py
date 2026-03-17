@@ -7,12 +7,13 @@ DATABASE MODELS (TANPA SQLALCHEMY)
 Menggunakan dataclasses biasa, bukan SQLAlchemy
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Dict, List, Any
 from enum import Enum
 
 
+# ===== ENUMS =====
 class DominanceLevel(Enum):
     """Enum untuk dominance level"""
     NORMAL = "normal"
@@ -84,23 +85,7 @@ class Mood(Enum):
             return cls.HAPPY
 
 
-class ConversationState(Enum):
-    """Enum untuk conversation states (untuk PTB ConversationHandler)"""
-    SELECTING_ROLE = 1
-    SELECTING_BOT_NAME = 2
-    SELECTING_BOT_ROLE = 3
-    SELECTING_DOMINANCE = 4
-    SELECTING_PERSONALITY = 5
-    SELECTING_APPEARANCE = 6
-    CONFIRMATION = 7
-    CHATTING = 8
-    SELECTING_ACTION = 9
-    SELECTING_LOCATION = 10
-    SELECTING_CLOTHING = 11
-    SELECTING_ACTIVITY = 12
-    AWAITING_RESPONSE = 13
-
-
+# ===== CONSTANTS =====
 class Constants:
     """Constants for relationship models"""
     
@@ -150,22 +135,26 @@ class Constants:
     DEFAULT_CLIMAX = 0
     DEFAULT_ANGER = 0
     
-    # Conversation States (untuk PTB ConversationHandler)
-    SELECTING_ROLE = ConversationState.SELECTING_ROLE.value
-    SELECTING_BOT_NAME = ConversationState.SELECTING_BOT_NAME.value
-    SELECTING_BOT_ROLE = ConversationState.SELECTING_BOT_ROLE.value
-    SELECTING_DOMINANCE = ConversationState.SELECTING_DOMINANCE.value
-    SELECTING_PERSONALITY = ConversationState.SELECTING_PERSONALITY.value
-    SELECTING_APPEARANCE = ConversationState.SELECTING_APPEARANCE.value
-    CONFIRMATION = ConversationState.CONFIRMATION.value
-    CHATTING = ConversationState.CHATTING.value
-    SELECTING_ACTION = ConversationState.SELECTING_ACTION.value
-    SELECTING_LOCATION = ConversationState.SELECTING_LOCATION.value
-    SELECTING_CLOTHING = ConversationState.SELECTING_CLOTHING.value
-    SELECTING_ACTIVITY = ConversationState.SELECTING_ACTIVITY.value
-    AWAITING_RESPONSE = ConversationState.AWAITING_RESPONSE.value
+    # ===== CONVERSATION STATES (UNTUK PTB) =====
+    SELECTING_ROLE = 1
+    SELECTING_BOT_NAME = 2
+    SELECTING_BOT_ROLE = 3
+    SELECTING_DOMINANCE = 4
+    SELECTING_PERSONALITY = 5
+    SELECTING_APPEARANCE = 6
+    CONFIRMATION = 7
+    CHATTING = 8
+    SELECTING_ACTION = 9
+    SELECTING_LOCATION = 10
+    SELECTING_CLOTHING = 11
+    SELECTING_ACTIVITY = 12
+    AWAITING_RESPONSE = 13
+    CONFIRM_END = 14
+    CONFIRM_CLOSE = 15
+    CONFIRM_BROADCAST = 16
 
 
+# ===== DATACLASSES =====
 @dataclass
 class Relationship:
     """Model relationship tanpa SQLAlchemy"""
@@ -273,12 +262,12 @@ class HTSFWBRelationship:
             self.unique_id = str(uuid.uuid4())
 
 
+# ===== EXPORTS =====
 __all__ = [
     'DominanceLevel',
     'RelationshipStage',
     'RelationshipStatus',
     'Mood',
-    'ConversationState',
     'Constants',
     'Relationship',
     'Conversation',
