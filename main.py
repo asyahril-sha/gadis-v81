@@ -4,7 +4,7 @@
 =============================================================================
 GADIS V81 - MAIN ENTRY POINT
 =============================================================================
-Native python-telegram-bot webhook dengan semua fitur V81
+Native python-telegram-bot dengan polling mode
 """
 
 import asyncio
@@ -27,27 +27,18 @@ print("    Premium Edition - All Features")
 print("="*70)
 print(f"📊 Database: {settings.db.name} @ {settings.db.host}")
 print(f"🤖 AI Model: {settings.ai.primary_model}")
-print(f"👑 Admin ID: {settings.admin_id or 'Not set'}")
+print(f"👑 Admin ID: {settings.admin_id}")
 print(f"🔞 Sexual Features: {'ENABLED' if settings.sexual.enabled else 'DISABLED'}")
 print(f"🌍 Public Areas: {settings.sexual.max_positions} positions")
 print(f"🎯 Bot Initiative: {'ON' if settings.sexual.bot_initiative_enabled else 'OFF'}")
 print("="*70)
 
 
-class Application:
-    """Main application class"""
+async def main():
+    """Main function"""
+    logger.info("🚀 Starting GADIS V81...")
     
-    def __init__(self):
-        self.bot_app = None
-        self.ws_server = None
-        self.background_tasks = []
-        self.is_running = True
-        self.webhook_mode = "polling"
-        
-    async def startup(self):
-        """Initialize all components"""
-        logger.info("🚀 Starting GADIS V81...")
-        
+    try:
         # Initialize database
         from database.connection import init_db
         await init_db()
@@ -60,154 +51,95 @@ class Application:
         
         # Create bot application
         from bot.application import create_application
-        self.bot_app = await create_application()
+        app = await create_application()
         logger.info("✅ Bot application created")
         
-        # Setup webhook
+        # Setup webhook (polling mode)
         from bot.webhook import setup_webhook
-        self.webhook_mode = await setup_webhook(self.bot_app)
-        logger.info(f"✅ Webhook URL: {self.webhook_mode}")
-        
-        # Start WebSocket server (optional)
-        if hasattr(settings, 'ws_host') and settings.ws_host:
-            try:
-                from ws.server import start_websocket_server
-                self.ws_server = await start_websocket_server()
-                logger.info(f"✅ WebSocket server started on {settings.ws_host}:{settings.ws_port}")
-            except (ImportError, AttributeError) as e:
-                logger.debug(f"WebSocket server not available: {e}")
+        mode = await setup_webhook(app)
+        logger.info(f"✅ Webhook URL: {mode}")
         
         # Start background tasks
-        self.background_tasks = await self._start_background_tasks()
-        logger.info(f"✅ Background tasks started: {len(self.background_tasks)}")
-        
-        logger.info("🚀 GADIS V81 is ready!")
-        
-    async def _start_background_tasks(self):
-        """Start all background tasks"""
-        tasks = []
-        
-        # Memory consolidation task (if available)
+        background_tasks = []
         try:
             from memory.consolidation import consolidation_loop
-            tasks.append(asyncio.create_task(consolidation_loop()))
-        except (ImportError, AttributeError):
-            logger.debug("Memory consolidation not available")
+            background_tasks.append(asyncio.create_task(consolidation_loop()))
+        except:
+            pass
         
-        # Backup task (if available)
-        if settings.backup_enabled:
-            try:
-                from backup.automated import backup_loop
-                tasks.append(asyncio.create_task(backup_loop()))
-            except (ImportError, AttributeError):
-                logger.debug("Backup system not available")
+        logger.info(f"✅ Background tasks started: {len(background_tasks)}")
+        logger.info("🚀 GADIS V81 is ready!")
         
-        # Analytics task (if available)
-        try:
-            from analytics.collector import analytics_loop
-            tasks.append(asyncio.create_task(analytics_loop()))
-        except (ImportError, AttributeError):
-            logger.debug("Analytics not available")
+        # Start polling - INI AKAN BLOCKING SAMPAI BOT BERHENTI
+        logger.info("📡 Starting bot in polling mode...")
+        await app.run_polling(
+            allowed_updates=['message', 'callback_query'],
+            drop_pending_updates=True
+        )
         
-        # Metrics server (if available)
-        if hasattr(settings, 'prometheus_port') and settings.prometheus_port:
-            try:
-                from monitoring.metrics import start_metrics_server
-                tasks.append(asyncio.create_task(start_metrics_server()))
-            except (ImportError, AttributeError):
-                logger.debug("Metrics server not available")
-        
-        return tasks
-    
-    async def shutdown(self):
-        """Graceful shutdown"""
-        logger.info("🛑 Shutting down GADIS V81...")
-        self.is_running = False
+    except asyncio.CancelledError:
+        logger.info("👋 Bot stopped by user")
+    except Exception as e:
+        logger.error(f"❌ Fatal error: {e}")
+        raise
+    finally:
+        # Cleanup
+        logger.info("🛑 Shutting down...")
         
         # Cancel background tasks
-        for task in self.background_tasks:
+        for task in background_tasks:
             task.cancel()
-            try:
-                await task
-            except asyncio.CancelledError:
-                pass
         
-        # Close database connections
+        # Close database
         try:
             from database.connection import close_db
             await close_db()
-            logger.info("✅ Database connection closed")
-        except Exception as e:
-            logger.error(f"Error closing database: {e}")
+        except:
+            pass
         
         # Close Redis
         try:
             from cache.redis_client import close_redis
             await close_redis()
-            logger.info("✅ Redis connection closed")
-        except Exception as e:
-            logger.error(f"Error closing Redis: {e}")
+        except:
+            pass
         
         logger.info("👋 Goodbye!")
-    
-    async def run(self):
-        """Run the application"""
-        try:
-            await self.startup()
-            
-            # Run based on webhook mode
-            if self.bot_app:
-                if self.webhook_mode == "polling":
-                    # Mode polling - SERAHKAN KE PTB
-                    logger.info("📡 Starting bot in polling mode...")
-                    
-                    # Hapus webhook
-                    await self.bot_app.bot.delete_webhook(drop_pending_updates=True)
-                    
-                    # Biarkan PTB mengelola event loop
-                    await self.bot_app.run_polling(
-                        allowed_updates=['message', 'callback_query'],
-                        drop_pending_updates=True
-                    )
-                else:
-                    # Mode webhook
-                    logger.info(f"🌐 Starting bot in webhook mode...")
-                    
-                    # Biarkan PTB mengelola event loop
-                    await self.bot_app.run_webhook(
-                        listen="0.0.0.0",
-                        port=settings.webhook.port,
-                        url_path=settings.webhook.path,
-                        webhook_url=self.webhook_mode
-                    )
-        except KeyboardInterrupt:
-            logger.info("👋 Bot stopped by user")
-        except Exception as e:
-            logger.error(f"❌ Fatal error: {e}")
-        finally:
-            # PTB sudah handle shutdown sendiri
-            logger.info("👋 Bot has stopped")
 
 
-# ===== MAIN =====
+def handle_signal():
+    """Handle shutdown signals"""
+    logger.info("Received signal, shutting down...")
+    # Cancel all tasks
+    for task in asyncio.all_tasks():
+        task.cancel()
+
 
 if __name__ == "__main__":
-    app = Application()
-    
     # Register signal handlers
-    def handle_signal(sig, frame):
-        logger.info(f"Received signal {sig}, shutting down...")
-        # Biarkan PTB handle shutdown
-        sys.exit(0)
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     
-    signal.signal(signal.SIGINT, handle_signal)
-    signal.signal(signal.SIGTERM, handle_signal)
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(sig, handle_signal)
     
-    # Simple run with asyncio
     try:
-        asyncio.run(app.run())
+        loop.run_until_complete(main())
     except KeyboardInterrupt:
         logger.info("👋 Bot stopped by user")
     except Exception as e:
         logger.error(f"Fatal error: {e}")
         sys.exit(1)
+    finally:
+        try:
+            # Cancel all tasks
+            for task in asyncio.all_tasks(loop):
+                task.cancel()
+            
+            # Run loop one last time to let tasks finish
+            loop.run_until_complete(asyncio.sleep(0.1))
+            loop.close()
+        except:
+            pass
+        
+        logger.info("✅ Shutdown complete")
