@@ -7,14 +7,15 @@ WEBHOOK SETUP
 """
 
 import os
+import asyncio
 from telegram.ext import Application
 from utils.logger import logger
 from config import settings
 
 
-async def setup_webhook(app: Application) -> str:
+async def setup_webhook_async(app: Application) -> str:
     """
-    Setup webhook untuk Railway
+    Setup webhook untuk Railway - ASYNC VERSION
     """
     
     # Dapatkan URL dari environment (Railway)
@@ -29,15 +30,12 @@ async def setup_webhook(app: Application) -> str:
         webhook_url = f"https://{railway_url}{settings.webhook.path}"
     else:
         logger.warning("⚠️ No webhook URL found, using polling mode")
-        # Hanya delete webhook, tidak pakai updater
         await app.bot.delete_webhook()
         return "polling"
     
     try:
-        # Hapus webhook lama
         await app.bot.delete_webhook()
         
-        # Set webhook baru
         success = await app.bot.set_webhook(
             url=webhook_url,
             allowed_updates=['message', 'callback_query'],
@@ -47,8 +45,6 @@ async def setup_webhook(app: Application) -> str:
         
         if success:
             logger.info(f"✅ Webhook set to: {webhook_url}")
-            info = await app.bot.get_webhook_info()
-            logger.info(f"📊 Webhook info: {info.url}")
             return webhook_url
         else:
             logger.error("❌ Failed to set webhook")
@@ -61,8 +57,22 @@ async def setup_webhook(app: Application) -> str:
         return "polling"
 
 
+def setup_webhook_sync(app: Application) -> str:
+    """
+    Setup webhook synchronously (wrapper untuk async)
+    """
+    # Buat event loop baru untuk menjalankan async function
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        result = loop.run_until_complete(setup_webhook_async(app))
+        return result
+    finally:
+        loop.close()
+
+
 async def delete_webhook(app: Application):
-    """Delete webhook - fungsi yang di-import di __init__.py"""
+    """Delete webhook"""
     try:
         await app.bot.delete_webhook(drop_pending_updates=True)
         logger.info("✅ Webhook deleted")
