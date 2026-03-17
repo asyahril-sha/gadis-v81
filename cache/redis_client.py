@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 =============================================================================
-REDIS CLIENT (SEDERHANA)
+REDIS CLIENT SEDERHANA
 =============================================================================
-Redis client sederhana (bisa di-skip jika tidak digunakan)
+Redis client sederhana (mock) - tidak perlu Redis sungguhan
 """
 
 from typing import Optional, Any, Dict
@@ -55,14 +55,18 @@ class RedisClient:
 
 
 # ===== FUNGSI YANG DIBUTUHKAN =====
+async def init_redis():
+    """Initialize Redis (dipanggil di main.py)"""
+    await redis_client.initialize()
+
+
 async def close_redis():
-    """Close Redis connection (dipanggil di main.py)"""
-    if redis_client.is_connected():
-        await redis_client.close()
+    """Close Redis connection"""
+    await redis_client.close()
 
 
 # ===== GLOBAL INSTANCE =====
 redis_client = RedisClient()
 
 
-__all__ = ['redis_client', 'close_redis']
+__all__ = ['redis_client', 'init_redis', 'close_redis']
