@@ -1,0 +1,58 @@
+# ===== CORE DEPENDENCIES =====
+python-telegram-bot==20.7
+openai==1.12.0
+python-dotenv==1.0.1
+
+# ===== WEBHOOK & API =====
+Flask==3.0.2
+requests==2.31.0
+httpx==0.27.0
+fastapi==0.110.0
+uvicorn==0.29.0
+
+# ===== DATABASE =====
+asyncpg==0.29.0
+sqlalchemy==2.0.28
+alembic==1.13.1
+redis==5.0.3
+aioredis==2.0.1
+
+# ===== MESSAGE QUEUE =====
+aio-pika==9.3.0
+celery==5.3.6
+
+# ===== VECTOR DATABASE =====
+chromadb==0.5.0
+faiss-cpu==1.8.0
+sentence-transformers==2.3.1
+pinecone-client==3.1.0
+numpy==1.26.3
+
+# ===== VALIDATION =====
+pydantic==2.6.1
+pydantic-settings==2.1.0
+
+# ===== LOGGING & MONITORING =====
+loguru==0.7.2
+prometheus-client==0.20.0
+grafana-api==1.0.3
+
+# ===== WEBSOCKET =====
+websockets==12.0
+
+# ===== SECURITY =====
+cryptography==42.0.5
+python-jose==3.3.0
+passlib==1.7.4
+
+# ===== TESTING =====
+pytest==8.1.1
+pytest-asyncio==0.23.5
+pytest-cov==5.0.0
+locust==2.24.0
+
+# ===== UTILITIES =====
+python-dateutil==2.9.0
+typing-extensions==4.10.0
+click==8.1.7
+rich==13.7.1
