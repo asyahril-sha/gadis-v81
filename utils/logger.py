@@ -10,7 +10,15 @@ Menggunakan loguru untuk logging dengan berbagai output
 import sys
 from pathlib import Path
 from loguru import logger
-from config import settings
+
+# Coba import settings, jika gagal buat default
+try:
+    from config import settings
+except ImportError:
+    class DummySettings:
+        log_dir = Path("logs")
+    settings = DummySettings()
+    settings.log_dir.mkdir(exist_ok=True)
 
 
 def setup_logging(module_name: str = "gadis_v81"):
@@ -21,6 +29,9 @@ def setup_logging(module_name: str = "gadis_v81"):
     - JSON logging untuk production
     - Error tracking
     """
+    
+    # Pastikan direktori log ada
+    settings.log_dir.mkdir(exist_ok=True)
     
     # Remove default handler
     logger.remove()
@@ -80,5 +91,5 @@ def setup_logging(module_name: str = "gadis_v81"):
     return logger
 
 
-# ===== EXPORT =====
+# Export logger
 __all__ = ['setup_logging', 'logger']
