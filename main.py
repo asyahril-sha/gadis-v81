@@ -65,7 +65,7 @@ class Application:
         # Setup webhook
         from bot.webhook import setup_webhook
         webhook_url = await setup_webhook(self.bot_app)
-        logger.info(f"✅ Webhook URL: {webhook_url or 'polling'}")
+        logger.info(f"✅ Webhook URL: {webhook_url}")
         
         # Start WebSocket server (optional)
         if hasattr(settings, 'ws_host') and settings.ws_host:
@@ -171,33 +171,36 @@ class Application:
         try:
             await self.startup()
             
-            # Run webhook (blocking)
+            # Run based on webhook setup
             if self.bot_app:
-                # Gunakan polling jika tidak ada webhook URL
-                if not settings.webhook.url:
+                # Cek hasil dari setup_webhook
+                from bot.webhook import setup_webhook
+                webhook_result = await setup_webhook(self.bot_app)
+                
+                if webhook_result == "polling":
+                    # Mode polling
                     logger.info("📡 Starting bot in polling mode...")
                     
-                    # Gunakan run_polling dengan parameter yang tepat
-                    await self.bot_app.initialize()
-                    await self.bot_app.start()
+                    # HAPUS WEBHOOK DULU UNTUK MEMASTIKAN
+                    await self.bot_app.bot.delete_webhook(drop_pending_updates=True)
                     
-                    # Start polling
-                    await self.bot_app.updater.start_polling(
+                    # Run polling
+                    await self.bot_app.run_polling(
                         allowed_updates=['message', 'callback_query'],
                         drop_pending_updates=True,
-                        error_callback=self._handle_polling_error
+                        close_loop=False
                     )
-                    
-                    # Keep running until stopped
-                    while self.is_running:
-                        await asyncio.sleep(1)
-                        
                 else:
+                    # Mode webhook
+                    logger.info(f"🌐 Starting bot in webhook mode on port {settings.webhook.port}...")
+                    
+                    # Run webhook
                     await self.bot_app.run_webhook(
                         listen="0.0.0.0",
                         port=settings.webhook.port,
                         url_path=settings.webhook.path,
-                        webhook_url=settings.webhook.url
+                        webhook_url=webhook_result,
+                        close_loop=False
                     )
         except KeyboardInterrupt:
             logger.info("👋 Bot stopped by user")
@@ -210,10 +213,6 @@ class Application:
             # Shutdown only if still running
             if self.is_running:
                 await self.shutdown()
-    
-    def _handle_polling_error(self, error):
-        """Handle polling errors"""
-        logger.error(f"Polling error: {error}")
 
 
 # ===== SIGNAL HANDLERS =====
