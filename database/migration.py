@@ -64,11 +64,6 @@ class MigrationManager:
         await asyncio.to_thread(_drop)
         return True
     
-    async def seed_data(self):
-        """Seed initial data"""
-        from database.seeds import seed_all
-        await seed_all()
-    
     async def get_current_version(self) -> Optional[str]:
         """Get current database version"""
         def _get():
@@ -230,8 +225,7 @@ async def run_migrations():
         logger.info("📊 Creating database tables...")
         await manager.create_tables()
         await manager.init_alembic()
-        await manager.seed_data()
-        logger.info("✅ Database initialized with seed data")
+        logger.info("✅ Database initialized")
     else:
         logger.info("✅ Database already exists, skipping creation")
     
