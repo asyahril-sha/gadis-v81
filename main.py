@@ -34,7 +34,9 @@ print("="*70)
 
 
 async def init_components():
-    """Initialize all components"""
+    """Initialize all components asynchronously"""
+    logger.info("🚀 Starting GADIS V81...")
+    
     # Initialize database
     from database.connection import init_db
     await init_db()
@@ -55,22 +57,20 @@ async def init_components():
     mode = await setup_webhook(app)
     logger.info(f"✅ Webhook URL: {mode}")
     
+    logger.info("🚀 GADIS V81 is ready!")
+    logger.info("📡 Starting bot in polling mode...")
+    
     return app
 
 
-async def main():
-    """Main function"""
+def main():
+    """Main function - synchronous"""
     try:
-        logger.info("🚀 Starting GADIS V81...")
+        # Initialize components asynchronously
+        app = asyncio.run(init_components())
         
-        # Initialize components
-        app = await init_components()
-        
-        logger.info("🚀 GADIS V81 is ready!")
-        logger.info("📡 Starting bot in polling mode...")
-        
-        # Start polling - INI AKAN BLOCKING
-        await app.run_polling(
+        # Run polling - this is blocking and manages its own loop
+        app.run_polling(
             allowed_updates=['message', 'callback_query'],
             drop_pending_updates=True
         )
@@ -79,21 +79,10 @@ async def main():
         logger.info("👋 Bot stopped by user")
     except Exception as e:
         logger.error(f"❌ Fatal error: {e}")
-        raise
+        sys.exit(1)
     finally:
         logger.info("👋 Goodbye!")
 
 
-def run_bot():
-    """Run bot in a new event loop"""
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        logger.info("👋 Bot stopped by user")
-    except Exception as e:
-        logger.error(f"Fatal error: {e}")
-        sys.exit(1)
-
-
 if __name__ == "__main__":
-    run_bot()
+    main()
