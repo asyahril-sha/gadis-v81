@@ -1,0 +1,51 @@
+# Git
+.git
+.gitignore
+.github
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.coverage
+htmlcov
+
+# Environment
+.env
+.env.local
+.venv
+venv
+ENV
+
+# Logs
+logs/
+*.log
+
+# Memory storage
+memory_storage/
+vector_db/
+
+# Backups
+backups/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Tests
+tests/
+*.test.py
+
+# Documentation
+README.md
+*.md
+docs/
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
