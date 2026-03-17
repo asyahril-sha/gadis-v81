@@ -1,41 +1,34 @@
-# Multi-stage build untuk optimasi
+# Multi-stage build dengan optimasi
 
 # Stage 1: Builder
 FROM python:3.11-slim as builder
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    make \
-    libffi-dev \
-    libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements
+# Copy hanya requirements.txt dulu (caching layer)
 COPY requirements.txt .
 
-# Install dependencies langsung (tanpa wheels)
-RUN pip install --no-cache-dir -r requirements.txt
+# Install dependencies dengan pip cache
+RUN pip install --no-cache-dir --user -r requirements.txt
 
 # Stage 2: Final
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install runtime system dependencies
+# Install runtime system dependencies (minimal)
 RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy installed packages from builder
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder /root/.local /root/.local
 
 # Copy application code
 COPY . .
+
+# Make sure scripts in .local are usable
+ENV PATH=/root/.local/bin:$PATH
 
 # Create necessary directories
 RUN mkdir -p logs memory_storage backups
