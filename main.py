@@ -33,30 +33,38 @@ print(f"🎯 Bot Initiative: {'ON' if settings.sexual.bot_initiative_enabled els
 print("="*70)
 
 
+async def init_components():
+    """Initialize all components"""
+    # Initialize database
+    from database.connection import init_db
+    await init_db()
+    logger.info("✅ Database initialized")
+    
+    # Initialize Redis (mock)
+    from cache.redis_client import init_redis
+    await init_redis()
+    logger.info("✅ Redis initialized")
+    
+    # Create bot application
+    from bot.application import create_application
+    app = await create_application()
+    logger.info("✅ Bot application created")
+    
+    # Setup webhook (polling mode)
+    from bot.webhook import setup_webhook
+    mode = await setup_webhook(app)
+    logger.info(f"✅ Webhook URL: {mode}")
+    
+    return app
+
+
 async def main():
     """Main function"""
     try:
         logger.info("🚀 Starting GADIS V81...")
         
-        # Initialize database
-        from database.connection import init_db
-        await init_db()
-        logger.info("✅ Database initialized")
-        
-        # Initialize Redis (mock)
-        from cache.redis_client import init_redis
-        await init_redis()
-        logger.info("✅ Redis initialized")
-        
-        # Create bot application
-        from bot.application import create_application
-        app = await create_application()
-        logger.info("✅ Bot application created")
-        
-        # Setup webhook (polling mode)
-        from bot.webhook import setup_webhook
-        mode = await setup_webhook(app)
-        logger.info(f"✅ Webhook URL: {mode}")
+        # Initialize components
+        app = await init_components()
         
         logger.info("🚀 GADIS V81 is ready!")
         logger.info("📡 Starting bot in polling mode...")
@@ -76,7 +84,8 @@ async def main():
         logger.info("👋 Goodbye!")
 
 
-if __name__ == "__main__":
+def run_bot():
+    """Run bot in a new event loop"""
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
@@ -84,3 +93,7 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f"Fatal error: {e}")
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    run_bot()
