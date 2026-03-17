@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 =============================================================================
-SQLITE CONNECTION (FINAL)
+SQLITE CONNECTION (SANGAT SEDERHANA)
 =============================================================================
-Koneksi database SQLite untuk single user
+Koneksi database SQLite tanpa settings.db.path
 """
 
 import sqlite3
@@ -21,8 +21,8 @@ class DatabaseManager:
     """Manajemen koneksi SQLite sederhana"""
     
     def __init__(self):
-        # Perbaikan: settings.db_path → settings.db.path
-        self.db_path = Path(settings.db.path)
+        # Langsung pakai string, bukan settings.db.path
+        self.db_path = Path("gadis_v81.db")
         self.connection = None
         self._lock = None
         self._stats = {
