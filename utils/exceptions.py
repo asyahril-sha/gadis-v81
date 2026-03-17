@@ -8,11 +8,19 @@ Global exception handling untuk bot
 """
 
 import traceback
+import sys
 from typing import Optional, Dict, Any
 from datetime import datetime
+from loguru import logger
 
-from utils.logger import logger
-from config import settings
+# Coba import settings, jika gagal buat dummy
+try:
+    from config import settings
+except ImportError:
+    class DummySettings:
+        admin_id = None
+        telegram_token = None
+    settings = DummySettings()
 
 
 class GadisBaseException(Exception):
@@ -70,11 +78,15 @@ class GlobalExceptionHandler:
         self.error_count += 1
         self.last_error = error
         
-        logger.error(f"Exception: {type(error).__name__}: {error}")
-        logger.debug(traceback.format_exc())
+        # Log error dengan loguru
+        logger.opt(exception=error).error(f"Exception: {type(error).__name__}: {error}")
         
         if isinstance(error, GadisBaseException):
             return f"⚠️ {error.message}"
+        
+        # Notify admin untuk critical errors
+        if isinstance(error, (DatabaseError, AIError)):
+            await self._notify_admin(error, context or {})
         
         return "😔 Maaf, terjadi error. Coba lagi ya."
     
@@ -87,12 +99,19 @@ class GlobalExceptionHandler:
             from telegram import Bot
             bot = Bot(token=settings.telegram_token)
             
+            error_type = type(error).__name__
+            error_msg = str(error)[:200]
+            
             await bot.send_message(
                 chat_id=settings.admin_id,
-                text=f"🚨 Error: {type(error).__name__}\n{str(error)[:200]}"
+                text=f"🚨 *Critical Error*\n"
+                     f"Type: `{error_type}`\n"
+                     f"Message: `{error_msg}`\n"
+                     f"Context: `{context}`",
+                parse_mode='Markdown'
             )
-        except:
-            pass
+        except Exception as e:
+            logger.error(f"Failed to notify admin: {e}")
     
     def get_stats(self) -> Dict:
         """Get error statistics"""
@@ -102,20 +121,47 @@ class GlobalExceptionHandler:
         }
 
 
+# Global exception handler untuk Python
+def global_exception_handler(exc_type, exc_value, exc_traceback):
+    """Handle uncaught exceptions"""
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+    
+    logger.opt(exception=(exc_type, exc_value, exc_traceback)).critical("Uncaught exception")
+
+
+# Set global exception handler
+sys.excepthook = global_exception_handler
+
+
 # Decorator for error handling
 def handle_errors(func):
     """Decorator for error handling"""
-    async def wrapper(*args, **kwargs):
+    async def async_wrapper(*args, **kwargs):
         try:
             return await func(*args, **kwargs)
         except Exception as e:
             handler = GlobalExceptionHandler()
             return await handler.handle(e, {'function': func.__name__})
-    return wrapper
+    
+    def sync_wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            handler = GlobalExceptionHandler()
+            import asyncio
+            loop = asyncio.new_event_loop()
+            return loop.run_until_complete(handler.handle(e, {'function': func.__name__}))
+    
+    import asyncio
+    if asyncio.iscoroutinefunction(func):
+        return async_wrapper
+    return sync_wrapper
 
 
 # Global instance
-global_exception_handler = GlobalExceptionHandler()
+global_exception_handler_obj = GlobalExceptionHandler()
 
 
 __all__ = [
@@ -126,6 +172,6 @@ __all__ = [
     'SessionError',
     'RoleError',
     'ValidationError',
-    'global_exception_handler',
+    'global_exception_handler_obj',
     'handle_errors'
 ]
