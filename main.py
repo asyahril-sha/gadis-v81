@@ -149,10 +149,6 @@ class Application:
         from cache.redis_client import close_redis
         await close_redis()
         
-        # Close RabbitMQ
-        from queue.rabbitmq import close_rabbitmq
-        await close_rabbitmq()
-        
         logger.info("👋 Goodbye!")
     
     async def run(self):
