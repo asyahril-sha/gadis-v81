@@ -78,7 +78,7 @@ async def create_application() -> Application:
     # ===== CONVERSATION HANDLERS =====
     logger.info("  • Setting up conversation handlers...")
     
-    # Start conversation - tambahkan per_* parameters untuk menghilangkan warning
+    # Start conversation
     start_conv = ConversationHandler(
         entry_points=[CommandHandler('start', start_command)],
         states={
