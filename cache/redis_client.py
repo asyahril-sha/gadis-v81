@@ -36,6 +36,8 @@ class MockRedis:
 _redis_client: Optional[MockRedis] = None
 
 
+# ===== ASYNC VERSIONS =====
+
 async def init_redis():
     """Initialize Redis asynchronously"""
     global _redis_client
@@ -58,8 +60,24 @@ async def close_redis():
         logger.info("✅ Redis mock closed (async)")
 
 
+# ===== SYNC WRAPPERS =====
+
+def init_redis_sync():
+    """Initialize Redis synchronously"""
+    import asyncio
+    return asyncio.run(init_redis())
+
+
+def close_redis_sync():
+    """Close Redis synchronously"""
+    import asyncio
+    return asyncio.run(close_redis())
+
+
 __all__ = [
     'init_redis',
     'get_redis',
-    'close_redis'
+    'close_redis',
+    'init_redis_sync',  # ← Tambahkan ini
+    'close_redis_sync'   # ← Tambahkan ini
 ]
