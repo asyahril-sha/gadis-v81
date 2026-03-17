@@ -63,11 +63,6 @@ class Application:
         await init_redis()
         logger.info("✅ Redis initialized")
         
-        # Initialize RabbitMQ
-        from queue.rabbitmq import init_rabbitmq
-        await init_rabbitmq()
-        logger.info("✅ RabbitMQ initialized")
-        
         # Create bot application
         from bot.application import create_application
         self.bot_app = await create_application()
