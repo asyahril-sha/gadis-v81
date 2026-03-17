@@ -25,6 +25,27 @@ from bot.callbacks import *
 from bot.commands import *
 
 
+# ===== FALLBACK STATES (jika Constants belum punya) =====
+class BotStates:
+    """States for conversation handlers"""
+    SELECTING_ROLE = 1
+    SELECTING_BOT_NAME = 2
+    SELECTING_BOT_ROLE = 3
+    SELECTING_DOMINANCE = 4
+    SELECTING_PERSONALITY = 5
+    SELECTING_APPEARANCE = 6
+    CONFIRMATION = 7
+    CHATTING = 8
+    SELECTING_ACTION = 9
+    SELECTING_LOCATION = 10
+    SELECTING_CLOTHING = 11
+    SELECTING_ACTIVITY = 12
+    AWAITING_RESPONSE = 13
+    CONFIRM_END = 14
+    CONFIRM_CLOSE = 15
+    CONFIRM_BROADCAST = 16
+
+
 async def create_application() -> Application:
     """
     Create and configure telegram application
@@ -48,6 +69,12 @@ async def create_application() -> Application:
         .concurrent_updates(True) \
         .build()
     
+    # ===== AMBIL STATE DARI CONSTANTS ATAU FALLBACK =====
+    SELECTING_ROLE = getattr(Constants, 'SELECTING_ROLE', BotStates.SELECTING_ROLE)
+    CONFIRM_END = getattr(Constants, 'CONFIRM_END', BotStates.CONFIRM_END)
+    CONFIRM_CLOSE = getattr(Constants, 'CONFIRM_CLOSE', BotStates.CONFIRM_CLOSE)
+    CONFIRM_BROADCAST = getattr(Constants, 'CONFIRM_BROADCAST', BotStates.CONFIRM_BROADCAST)
+    
     # ===== CONVERSATION HANDLERS =====
     logger.info("  • Setting up conversation handlers...")
     
@@ -55,7 +82,7 @@ async def create_application() -> Application:
     start_conv = ConversationHandler(
         entry_points=[CommandHandler('start', start_command)],
         states={
-            Constants.SELECTING_ROLE: [
+            SELECTING_ROLE: [
                 CallbackQueryHandler(agree_18_callback, pattern='^agree_18$'),
                 CallbackQueryHandler(start_pause_callback, pattern='^(unpause|new)$'),
                 CallbackQueryHandler(role_ipar_callback, pattern='^role_ipar$'),
@@ -78,7 +105,7 @@ async def create_application() -> Application:
     end_conv = ConversationHandler(
         entry_points=[CommandHandler('end', end_command)],
         states={
-            Constants.CONFIRM_END: [CallbackQueryHandler(end_callback, pattern='^end_')],
+            CONFIRM_END: [CallbackQueryHandler(end_callback, pattern='^end_')],
         },
         fallbacks=[CommandHandler('cancel', cancel_command)],
         name="end_conversation",
@@ -89,7 +116,7 @@ async def create_application() -> Application:
     close_conv = ConversationHandler(
         entry_points=[CommandHandler('close', close_command)],
         states={
-            Constants.CONFIRM_CLOSE: [CallbackQueryHandler(close_callback, pattern='^close_')],
+            CONFIRM_CLOSE: [CallbackQueryHandler(close_callback, pattern='^close_')],
         },
         fallbacks=[CommandHandler('cancel', cancel_command)],
         name="close_conversation",
@@ -105,7 +132,7 @@ async def create_application() -> Application:
             CommandHandler('fwb', fwb_command)
         ],
         states={
-            Constants.CONFIRM_BROADCAST: [
+            CONFIRM_BROADCAST: [
                 CallbackQueryHandler(jadipacar_callback, pattern='^jadipacar_'),
                 CallbackQueryHandler(break_callback, pattern='^break_'),
                 CallbackQueryHandler(breakup_callback, pattern='^breakup_'),
@@ -190,6 +217,8 @@ async def create_application() -> Application:
     # ===== ERROR HANDLER =====
     app.add_error_handler(error_handler)
     
-    logger.info(f"✅ All handlers registered: {len(app.handlers)} handlers")
+    # Log jumlah handlers
+    handler_count = sum(len(h) for h in app.handlers.values())
+    logger.info(f"✅ All handlers registered: {handler_count} handlers")
     
     return app
