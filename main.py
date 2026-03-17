@@ -42,7 +42,7 @@ class Application:
         self.ws_server = None
         self.background_tasks = []
         self.is_running = True
-        self.webhook_mode = "polling"  # Default polling
+        self.webhook_mode = "polling"
         
     async def startup(self):
         """Initialize all components"""
@@ -63,7 +63,7 @@ class Application:
         self.bot_app = await create_application()
         logger.info("✅ Bot application created")
         
-        # Setup webhook - simpan hasilnya
+        # Setup webhook
         from bot.webhook import setup_webhook
         self.webhook_mode = await setup_webhook(self.bot_app)
         logger.info(f"✅ Webhook URL: {self.webhook_mode}")
@@ -132,32 +132,6 @@ class Application:
             except asyncio.CancelledError:
                 pass
         
-        # Stop bot application
-        if self.bot_app:
-            try:
-                # Hapus webhook jika ada
-                try:
-                    await self.bot_app.bot.delete_webhook(drop_pending_updates=True)
-                    logger.info("✅ Webhook deleted")
-                except:
-                    pass
-                
-                # Stop the bot
-                await self.bot_app.stop()
-                await self.bot_app.shutdown()
-                logger.info("✅ Bot stopped")
-            except Exception as e:
-                logger.error(f"Error stopping bot: {e}")
-        
-        # Stop WebSocket server
-        if self.ws_server:
-            try:
-                self.ws_server.close()
-                await self.ws_server.wait_closed()
-                logger.info("✅ WebSocket stopped")
-            except Exception as e:
-                logger.error(f"Error stopping WebSocket: {e}")
-        
         # Close database connections
         try:
             from database.connection import close_db
@@ -184,22 +158,22 @@ class Application:
             # Run based on webhook mode
             if self.bot_app:
                 if self.webhook_mode == "polling":
-                    # Mode polling
+                    # Mode polling - SERAHKAN KE PTB
                     logger.info("📡 Starting bot in polling mode...")
                     
-                    # HAPUS WEBHOOK DULU UNTUK MEMASTIKAN
+                    # Hapus webhook
                     await self.bot_app.bot.delete_webhook(drop_pending_updates=True)
                     
-                    # Gunakan run_polling langsung
+                    # Biarkan PTB mengelola event loop
                     await self.bot_app.run_polling(
                         allowed_updates=['message', 'callback_query'],
                         drop_pending_updates=True
                     )
                 else:
                     # Mode webhook
-                    logger.info(f"🌐 Starting bot in webhook mode on port {settings.webhook.port}...")
+                    logger.info(f"🌐 Starting bot in webhook mode...")
                     
-                    # Run webhook
+                    # Biarkan PTB mengelola event loop
                     await self.bot_app.run_webhook(
                         listen="0.0.0.0",
                         port=settings.webhook.port,
@@ -210,23 +184,9 @@ class Application:
             logger.info("👋 Bot stopped by user")
         except Exception as e:
             logger.error(f"❌ Fatal error: {e}")
-            # Import exception handler
-            from utils.exceptions import exception_handler
-            await exception_handler.handle(e, {"phase": "runtime"})
         finally:
-            # Shutdown only if still running
-            if self.is_running:
-                await self.shutdown()
-
-
-# ===== SIGNAL HANDLERS =====
-
-def handle_signal(sig, frame):
-    """Handle shutdown signals"""
-    logger.info(f"Received signal {sig}, shutting down...")
-    
-    # Set flag to stop
-    app.is_running = False
+            # PTB sudah handle shutdown sendiri
+            logger.info("👋 Bot has stopped")
 
 
 # ===== MAIN =====
@@ -235,6 +195,11 @@ if __name__ == "__main__":
     app = Application()
     
     # Register signal handlers
+    def handle_signal(sig, frame):
+        logger.info(f"Received signal {sig}, shutting down...")
+        # Biarkan PTB handle shutdown
+        sys.exit(0)
+    
     signal.signal(signal.SIGINT, handle_signal)
     signal.signal(signal.SIGTERM, handle_signal)
     
